@@ -19,7 +19,7 @@ public class WayfinderBackendApplication {
         return args -> {
             User user = new User();
             user.name = "Maya";
-            user.email = "maya@example.com";
+            user.email = "maya" + System.currentTimeMillis() + "@example.com";
             user.createdAt = java.time.LocalDateTime.now();
             userRepository.save(user);  // сохраняем в базу
             System.out.println("User saved!");

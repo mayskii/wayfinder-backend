@@ -1,9 +1,9 @@
 package com.wayfinder.backend.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.*;  // Импорт JPA (@Entity, @Table, @Id, @GeneratedValue...) JPA — это библиотека связывает классы с таблицами в базе данных (ORM)
 import java.time.LocalDateTime;
 
-@Entity
+@Entity  // Говорит Spring/Hibernate: это сущность, её нужно хранить в базе данных
 @Table(name = "users")
 public class User {
 
