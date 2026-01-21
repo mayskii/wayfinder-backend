@@ -14,13 +14,13 @@ public class WayfinderBackendApplication {
         SpringApplication.run(WayfinderBackendApplication.class, args);
     }
 
-    @Bean
+    @Bean // @Bean — говорит Spring: «Создай этот объект и управляй им».
     CommandLineRunner run(UserRepository userRepository) {
         return args -> {
             User user = new User();
-            user.name = "Maya";
-            user.email = "maya" + System.currentTimeMillis() + "@example.com";
-            user.createdAt = java.time.LocalDateTime.now();
+            user.setName("Maya");
+            user.setEmail("maya" + System.currentTimeMillis() + "@example.com");
+            user.setCreatedAt(java.time.LocalDateTime.now());
             userRepository.save(user);  // сохраняем в базу
             System.out.println("User saved!");
         };
