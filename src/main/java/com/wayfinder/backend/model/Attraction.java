@@ -16,8 +16,9 @@ public class Attraction {
     @Column(name = "osm_id")
     private Long osmId;  // bigint в БД → Long в Java
 
-    @Column(name = "city_id")
-    private Long cityId;  //TODO надо добавить связи ибо это фореин ключ на cities.id
+    @ManyToOne
+    @JoinColumn(name = "city_id") // связь с колонкой city_id в таблице
+    private City city;
 
     private String name;
     private String category;

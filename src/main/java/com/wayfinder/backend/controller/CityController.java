@@ -76,6 +76,4 @@ public class CityController {
     public void deleteCity(@PathVariable Long id) {
         cityRepository.deleteById(id);
     }
-
-
 }
