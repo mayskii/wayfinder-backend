@@ -64,7 +64,7 @@ public class AttractionController {
         return optionalAttraction
                 .map(attraction -> {
                     Attraction saved = updateAttractionFields(attraction, updatedAttraction);
-                    return ResponseEntity.ok((Object) saved); // явно кастим к Object
+                    return ResponseEntity.ok((Object) saved);
                 })
                 .orElseGet(() -> ResponseEntity.status(404)
                         .body(Map.of(

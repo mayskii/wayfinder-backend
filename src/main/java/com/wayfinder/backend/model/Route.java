@@ -16,8 +16,9 @@ public class Route {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "user_id")
-    private Integer userId;   //TODO надо добавить связи  - foreign key - Owner of the route
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private String name;
     private LocalDateTime createdAt;
