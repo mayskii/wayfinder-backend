@@ -16,11 +16,13 @@ public class RouteAttraction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "route_id")
-    private Integer routeId;   //TODO надо добавить связи  - foreign key -  links to routes.id
+    @ManyToOne
+    @JoinColumn(name = "route_id", nullable = false)
+    private Route route;   // foreign key -  links to routes.id
 
-    @Column(name = "attraction_id")
-    private Long attractionId;    //TODO надо добавить связи  - foreign key links to attractions.id
+    @ManyToOne
+    @JoinColumn(name = "attraction_id", nullable = false) // связь с таблицей attractions
+    private Attraction attraction;    //foreign key links to attractions.id
 
     private Integer position;
     private LocalDateTime createdAt;
