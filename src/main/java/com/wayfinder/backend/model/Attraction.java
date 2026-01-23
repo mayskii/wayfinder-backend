@@ -16,7 +16,7 @@ public class Attraction {
     @Column(name = "osm_id")
     private Long osmId;  // bigint в БД → Long в Java
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "city_id") // связь с колонкой city_id в таблице
     private City city;
 

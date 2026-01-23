@@ -4,6 +4,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.wayfinder.backend.model.Attraction;
 import com.wayfinder.backend.repository.AttractionRepository;
+import com.wayfinder.backend.repository.CityRepository;
+import com.wayfinder.backend.model.City;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,9 +16,11 @@ import java.util.Map;
 public class AttractionController {
 
     private final AttractionRepository attractionRepository;
+    private final CityRepository cityRepository;
 
-    public AttractionController(AttractionRepository attractionRepository) {
+    public AttractionController(AttractionRepository attractionRepository, CityRepository cityRepository) {
         this.attractionRepository = attractionRepository;
+        this.cityRepository = cityRepository;
     }
 
     // READ ALL
@@ -40,7 +44,14 @@ public class AttractionController {
     // CREATE
     @PostMapping
     public Attraction createAttraction(@RequestBody Attraction attraction) {
-        attraction.setCreatedAt(java.time.LocalDateTime.now());
+        attraction.setCreatedAt(LocalDateTime.now());
+
+        if (attraction.getCity() != null) {
+            City city = cityRepository.findById(attraction.getCity().getOsmId())
+                    .orElseThrow(() -> new RuntimeException("City not found with osmId " + attraction.getCity().getOsmId()));
+            attraction.setCity(city);
+        }
+
         return attractionRepository.save(attraction);
     }
 
@@ -50,11 +61,16 @@ public class AttractionController {
 
         var optionalAttraction = attractionRepository.findById(id);
 
-        return optionalAttraction.<ResponseEntity<Object>>map(attraction -> ResponseEntity.ok(updateAttractionFields(attraction, updatedAttraction))).orElseGet(() -> ResponseEntity.status(404)
-                .body(Map.of(
-                        "status", 404,
-                        "message", "Attraction not found with id " + id
-                )));
+        return optionalAttraction
+                .map(attraction -> {
+                    Attraction saved = updateAttractionFields(attraction, updatedAttraction);
+                    return ResponseEntity.ok((Object) saved); // явно кастим к Object
+                })
+                .orElseGet(() -> ResponseEntity.status(404)
+                        .body(Map.of(
+                                "status", 404,
+                                "message", "Attraction not found with id " + id
+                        )));
     }
 
     private Attraction updateAttractionFields(Attraction attraction, Attraction updated) {
@@ -65,7 +81,7 @@ public class AttractionController {
         attraction.setWebsite(updated.getWebsite());
         attraction.setWheelchair(updated.getWheelchair());
         attraction.setFee(updated.getFee());
-        attraction.setCity(updated.getCity()); // если связь с City есть
+        attraction.setCity(updated.getCity());
         return attractionRepository.save(attraction);
     }
 
