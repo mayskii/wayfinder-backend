@@ -16,12 +16,12 @@ public class RouteAttraction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "route_id", nullable = false)
     private Route route;   // foreign key -  links to routes.id
 
-    @ManyToOne
-    @JoinColumn(name = "attraction_id", nullable = false) // связь с таблицей attractions
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "attraction_id", nullable = false)
     private Attraction attraction;    //foreign key links to attractions.id
 
     private Integer position;

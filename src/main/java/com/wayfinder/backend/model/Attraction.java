@@ -13,8 +13,11 @@ import lombok.Setter;
 public class Attraction {
 
     @Id
-    @Column(name = "osm_id")
-    private Long osmId;  // bigint в БД → Long в Java
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;  // INTERNAL ID (Hibernate)
+
+    @Column(name = "osm_id", unique = true)
+    private Long osmId;  // OSM ID (external)
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "city_id") // связь с колонкой city_id в таблице

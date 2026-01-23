@@ -12,8 +12,11 @@ import lombok.Setter;
 public class City {
 
     @Id
-    @Column(name = "osm_id")
-    private Long osmId;  // bigint в БД → Long в Java
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;  // INTERNAL ID (Hibernate)
+
+    @Column(name = "osm_id", unique = true)
+    private Long osmId;  // OSM ID (optional, external)
 
     private String name;
     private String country;

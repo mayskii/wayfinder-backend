@@ -3,9 +3,8 @@ package com.wayfinder.backend.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.wayfinder.backend.model.City;
-import com.wayfinder.backend.repository.CityRepository;
+import com.wayfinder.backend.service.CityService;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -13,23 +12,30 @@ import java.util.Map;
 @RequestMapping("/cities")
 public class CityController {
 
-    private final CityRepository cityRepository;
+    private final CityService cityService;
 
-    public CityController(CityRepository cityRepository) {
-        this.cityRepository = cityRepository;
+    public CityController(CityService cityService) {
+        this.cityService = cityService;
+    }
+
+    // 🔍 LOOKUP: BD → API
+    @GetMapping("/lookup")
+    public ResponseEntity<City> lookupCity(@RequestParam String name) {
+        City city = cityService.getCityCoordinates(name);
+        return ResponseEntity.ok(city);
     }
 
     // READ ALL
     @GetMapping
     public List<City> getAllCities() {
-        return cityRepository.findAll();
+        return cityService.getAllCities();
     }
 
-    // READ ONE
+    // READ ONE by ID
     @GetMapping("/{id}")
     public ResponseEntity<?> getCityById(@PathVariable Long id) {
-        return cityRepository.findById(id)
-                .<ResponseEntity<Object>>map(ResponseEntity::ok)
+        return cityService.getCityById(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(404)
                         .body(Map.of(
                                 "status", 404,
@@ -40,40 +46,27 @@ public class CityController {
     // CREATE
     @PostMapping
     public City createCity(@RequestBody City city) {
-        return cityRepository.save(city);
+        return cityService.save(city);
     }
 
     // UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateCity(@PathVariable Long id, @RequestBody City updatedCity) {
-
-        var optionalCity = cityRepository.findById(id);
-
-        if (optionalCity.isPresent()) {
-            City city = optionalCity.get();
-
-            city.setName(updatedCity.getName());
-            city.setCountry(updatedCity.getCountry());
-            city.setLat(updatedCity.getLat());
-            city.setLng(updatedCity.getLng());
-            city.setBbox(updatedCity.getBbox());
-            city.setLastUpdated(updatedCity.getLastUpdated());
-
-            City savedCity = cityRepository.save(city);
-            return ResponseEntity.ok(savedCity);
-
-        } else {
-            return ResponseEntity.status(404)
-                    .body(Map.of(
-                            "status", 404,
-                            "message", "City not found with id " + id
-                    ));
-        }
+    public ResponseEntity<?> updateCity(
+            @PathVariable Long id,
+            @RequestBody City updatedCity
+    ) {
+        return cityService.updateCity(id, updatedCity)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(404)
+                        .body(Map.of(
+                                "status", 404,
+                                "message", "City not found with id " + id
+                        )));
     }
 
     // DELETE
     @DeleteMapping("/{id}")
     public void deleteCity(@PathVariable Long id) {
-        cityRepository.deleteById(id);
+        cityService.deleteCity(id);
     }
 }
