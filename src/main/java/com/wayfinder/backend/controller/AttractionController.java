@@ -46,13 +46,7 @@ public class AttractionController {
     public Attraction createAttraction(@RequestBody Attraction attraction) {
         attraction.setCreatedAt(LocalDateTime.now());
 
-        if (attraction.getCity() != null) {
-            City city = cityRepository.findById(attraction.getCity().getOsmId())
-                    .orElseThrow(() -> new RuntimeException("City not found with osmId " + attraction.getCity().getOsmId()));
-            attraction.setCity(city);
-        }
-
-        return attractionRepository.save(attraction);
+        return saveAttractionWithCity(attraction, attraction);
     }
 
     // UPDATE
@@ -81,7 +75,17 @@ public class AttractionController {
         attraction.setWebsite(updated.getWebsite());
         attraction.setWheelchair(updated.getWheelchair());
         attraction.setFee(updated.getFee());
-        attraction.setCity(updated.getCity());
+
+        return saveAttractionWithCity(attraction, updated);
+    }
+
+    private Attraction saveAttractionWithCity(Attraction attraction, Attraction updated) {
+        if (updated.getCity() != null && updated.getCity().getId() != null) {
+            City city = cityRepository.findById(updated.getCity().getId())
+                    .orElseThrow(() -> new RuntimeException("City not found with id " + updated.getCity().getId()));
+            attraction.setCity(city);
+        }
+
         return attractionRepository.save(attraction);
     }
 

@@ -38,52 +38,51 @@ public class RouteAttractionController {
     // CREATE
     @PostMapping
     public ResponseEntity<Object> create(@RequestBody RouteAttraction ra) {
-        if (ra.getRoute() == null || ra.getRoute().getId() == null) {
-            return ResponseEntity.badRequest().body("route.id is required");
+        try {
+            ra.setCreatedAt(LocalDateTime.now());
+            return ResponseEntity.ok(saveRouteAttractionWithRelations(ra, ra));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
-
-        if (ra.getAttraction() == null || ra.getAttraction().getOsmId() == null) {
-            return ResponseEntity.badRequest().body("attraction.osmId is required");
-        }
-
-        // Получаем существующие сущности из базы
-        Route route = routeRepository.findById(ra.getRoute().getId())
-                .orElseThrow(() -> new RuntimeException("Route not found with id " + ra.getRoute().getId()));
-
-        Attraction attraction = attractionRepository.findById(ra.getAttraction().getOsmId())
-                .orElseThrow(() -> new RuntimeException("Attraction not found with osmId " + ra.getAttraction().getOsmId()));
-
-        ra.setRoute(route);
-        ra.setAttraction(attraction);
-        ra.setCreatedAt(LocalDateTime.now());
-
-        return ResponseEntity.ok(routeAttractionRepository.save(ra));
     }
 
-    // UPDATE position
+    // UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePosition(@PathVariable Integer id, @RequestBody RouteAttraction updatedRA) {
-        var optionalRA = routeAttractionRepository.findById(id);
-
-        if (optionalRA.isPresent()) {
-            RouteAttraction ra = optionalRA.get();
-            if (updatedRA.getPosition() != null) {
-                ra.setPosition(updatedRA.getPosition());
-            }
-            RouteAttraction savedRA = routeAttractionRepository.save(ra);
-            return ResponseEntity.ok(savedRA);
-        } else {
-            return ResponseEntity.status(404)
-                    .body(Map.of(
-                            "status", 404,
-                            "message", "RouteAttraction not found with id " + id
-                    ));
-        }
+    public ResponseEntity<Object> update(@PathVariable Integer id, @RequestBody RouteAttraction updatedRA) {
+        return routeAttractionRepository.findById(id)
+                .<ResponseEntity<Object>>map(ra -> ResponseEntity.ok(saveRouteAttractionWithRelations(ra, updatedRA)))
+                .orElseGet(() -> ResponseEntity.status(404)
+                        .body(Map.of("status", 404, "message", "RouteAttraction not found with id " + id)));
     }
 
     // DELETE
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Integer id) {
         routeAttractionRepository.deleteById(id);
+    }
+
+    // Общий метод для POST и PUT
+    private RouteAttraction saveRouteAttractionWithRelations(RouteAttraction ra, RouteAttraction updated) {
+
+        if (updated.getRoute() == null || updated.getRoute().getId() == null)
+            throw new RuntimeException("route.id is required");
+
+        if (updated.getAttraction() == null || updated.getAttraction().getId() == null)
+            throw new RuntimeException("attraction.id is required");
+
+        Route route = routeRepository.findById(updated.getRoute().getId())
+                .orElseThrow(() -> new RuntimeException("Route not found with id " + updated.getRoute().getId()));
+
+        Attraction attraction = attractionRepository.findById(updated.getAttraction().getId())
+                .orElseThrow(() -> new RuntimeException("Attraction not found with id " + updated.getAttraction().getId()));
+
+        ra.setRoute(route);
+        ra.setAttraction(attraction);
+
+        if (updated.getPosition() != null) {
+            ra.setPosition(updated.getPosition());
+        }
+
+        return routeAttractionRepository.save(ra);
     }
 }

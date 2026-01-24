@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,24 +30,48 @@ public class CityService {
 
     // 🔍 GET city coordinates (BD -> API)
     public City getCityCoordinates(String cityName) {
+        var cityOptional = cityRepository.findByName(cityName);
+        if (cityOptional.isPresent()) {
+            return cityOptional.get();
+        }
 
-        return cityRepository.findByName(cityName)
-                .orElseGet(() -> {
-                    String url = apiUrl + "?key=" + apiKey + "&q=" + cityName + "&format=json";
+        String url = apiUrl + "?key=" + apiKey + "&q=" + cityName + "&format=json";
+        Object[] responseArray = restTemplate.getForObject(url, Object[].class);
 
-                    Map[] response = restTemplate.getForObject(url, Map[].class);
+        if (responseArray == null || responseArray.length == 0) {
+            throw new RuntimeException("City not found via API: " + cityName);
+        }
 
-                    if (response == null || response.length == 0) {
-                        throw new RuntimeException("City not found: " + cityName);
-                    }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) responseArray[0];
 
-                    City city = new City();
-                    city.setName(cityName);
-                    city.setLat(Double.parseDouble(response[0].get("lat").toString()));
-                    city.setLng(Double.parseDouble(response[0].get("lon").toString()));
+        City city = new City();
+        city.setName(cityName);
+        city.setLat(Double.parseDouble(data.get("lat").toString()));
+        city.setLng(Double.parseDouble(data.get("lon").toString()));
 
-                    return cityRepository.save(city);
-                });
+        if (data.get("osm_id") != null) {
+            city.setOsmId(Long.parseLong(data.get("osm_id").toString()));
+            cityRepository.findByOsmId(city.getOsmId()).ifPresent(existing -> city.setId(existing.getId()));
+        }
+
+        if (data.get("boundingbox") != null) {
+            @SuppressWarnings("unchecked")
+            List<String> bboxList = (List<String>) data.get("boundingbox");
+            city.setBbox(String.join(",", bboxList));
+        }
+
+        if (data.get("display_name") != null) {
+            String displayName = data.get("display_name").toString();
+            String[] parts = displayName.split(",");
+            city.setCountry(parts[parts.length - 1].trim());
+        } else {
+            city.setCountry("Unknown");
+        }
+
+        city.setLastUpdated(LocalDateTime.now());
+
+        return cityRepository.save(city);
     }
 
     // READ ALL
@@ -61,6 +86,7 @@ public class CityService {
 
     // CREATE
     public City save(City city) {
+        city.setLastUpdated(java.time.LocalDateTime.now());
         return cityRepository.save(city);
     }
 
@@ -72,10 +98,17 @@ public class CityService {
             city.setLat(updatedCity.getLat());
             city.setLng(updatedCity.getLng());
             city.setBbox(updatedCity.getBbox());
-            city.setLastUpdated(updatedCity.getLastUpdated());
+
+            // Добавляем: обновляем OSM ID
+            city.setOsmId(updatedCity.getOsmId());
+
+            // Добавляем: ставим текущее время для lastUpdated
+            city.setLastUpdated(java.time.LocalDateTime.now());
+
             return cityRepository.save(city);
         });
     }
+
 
     // DELETE
     public void deleteCity(Long id) {
