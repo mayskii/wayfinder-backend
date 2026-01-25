@@ -22,10 +22,11 @@ public class CityService {
     private String apiUrl;
 
     private final CityRepository cityRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
-    public CityService(CityRepository cityRepository) {
+    public CityService(CityRepository cityRepository, RestTemplate restTemplate) {
         this.cityRepository = cityRepository;
+        this.restTemplate = restTemplate;
     }
 
     // 🔍 GET city coordinates (BD -> API)
