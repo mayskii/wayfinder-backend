@@ -11,11 +11,8 @@ import java.util.Optional;
 @Repository
 public interface AttractionRepository extends JpaRepository<Attraction, Long> {
 
+
+    List<Attraction> findTop100ByCity(City city);
+
     boolean existsByOsmId(Long osmId);
-
-    long countByCity(City city);
-
-    List<Attraction> findTop50ByCity(City city);
-
-    Optional<Attraction> findByOsmId(Long osmId);
 }

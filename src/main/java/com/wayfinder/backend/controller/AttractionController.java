@@ -106,26 +106,26 @@ public class AttractionController {
     @GetMapping("/from-osm")
     public List<Attraction> getAttractionsFromOsm(@RequestParam String cityName) {
 
-        City city = cityRepository.findByName(cityName)
+        final City city = cityRepository.findByName(cityName)
                 .orElseGet(() -> cityService.getCityCoordinates(cityName));
 
-        long existingCount = attractionRepository.countByCity(city); // считаем сколько у нас уже есть
-        if (existingCount >= 50) {
-            return attractionRepository.findTop50ByCity(city);
+        List<Attraction> existingAttractions = attractionRepository.findTop100ByCity(city);
+
+        if (existingAttractions.size() >= 100) {
+            return existingAttractions.subList(0, 100);
         }
 
         String bbox = getString(cityName, city);
         List<Map<String, Object>> osmAttractions = attractionService.getAttractions(bbox);
 
-        return osmAttractions.stream()
+        int needed = 100 - existingAttractions.size();
+
+        List<Attraction> newAttractions = osmAttractions.stream()
                 .map(data -> {
+                    Long osmId = data.get("id") != null ? Long.parseLong(data.get("id").toString()) : null;
+                    if (osmId == null || attractionRepository.existsByOsmId(osmId)) return null;
 
-                    Long osmId = data.get("id") != null ? Long.parseLong(data.get("id").toString()) : null; // Получаем osmId
-                    if (osmId == null) return null;
-
-                    Attraction attraction = attractionRepository.findByOsmId(osmId)
-                            .orElseGet(Attraction::new);
-
+                    Attraction attraction = new Attraction();
                     attraction.setOsmId(osmId);
                     attraction.setCity(city);
 
@@ -160,9 +160,12 @@ public class AttractionController {
                     return attraction;
                 })
                 .filter(Objects::nonNull)
-                .limit(50 - existingCount)
+                .limit(needed)
                 .map(attractionRepository::save)
                 .toList();
+
+        existingAttractions.addAll(newAttractions);
+        return existingAttractions;
     }
 
     private static @NonNull String getString(String cityName, City city) {
