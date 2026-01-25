@@ -6,6 +6,7 @@ import com.wayfinder.backend.model.RouteAttraction;
 import com.wayfinder.backend.repository.AttractionRepository;
 import com.wayfinder.backend.repository.RouteAttractionRepository;
 import com.wayfinder.backend.repository.RouteRepository;
+import com.wayfinder.backend.service.RouteOptimizationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,13 +21,18 @@ public class RouteAttractionController {
     private final RouteAttractionRepository routeAttractionRepository;
     private final RouteRepository routeRepository;
     private final AttractionRepository attractionRepository;
+    private final RouteOptimizationService routeOptimizationService;
 
-    public RouteAttractionController(RouteAttractionRepository routeAttractionRepository,
-                                     RouteRepository routeRepository,
-                                     AttractionRepository attractionRepository) {
+    public RouteAttractionController(
+            RouteAttractionRepository routeAttractionRepository,
+            RouteRepository routeRepository,
+            AttractionRepository attractionRepository,
+            RouteOptimizationService routeOptimizationService
+    ) {
         this.routeAttractionRepository = routeAttractionRepository;
         this.routeRepository = routeRepository;
         this.attractionRepository = attractionRepository;
+        this.routeOptimizationService = routeOptimizationService;
     }
 
     // READ ALL
@@ -118,5 +124,14 @@ public class RouteAttractionController {
         }
 
         return routeAttractionRepository.save(ra);
+    }
+
+    // Optimization
+    @PostMapping("/optimize/{routeId}")
+    public ResponseEntity<?> optimizeRoute(@PathVariable Integer routeId) {
+        routeOptimizationService.optimizeRoute(routeId);
+        return ResponseEntity.ok(
+                java.util.Map.of("message", "Route optimization started")
+        );
     }
 }
