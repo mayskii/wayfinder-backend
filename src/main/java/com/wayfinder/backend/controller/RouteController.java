@@ -38,6 +38,17 @@ public class RouteController {
                         .body(Map.of("status", 404, "message", "Route not found with id " + id)));
     }
 
+    // READ ALL ROUTES BY USER
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<?> getRoutesByUser(@PathVariable Integer userId) {
+        if (!userRepository.existsById(userId)) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("status", 404, "message", "User not found with id " + userId));
+        }
+        List<Route> routes = routeRepository.findByUserId(userId);
+        return ResponseEntity.ok(routes);
+    }
+
     // CREATE
     @PostMapping
     public ResponseEntity<?> createRoute(@RequestBody Route route) {
