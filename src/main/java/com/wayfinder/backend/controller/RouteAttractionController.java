@@ -128,10 +128,9 @@ public class RouteAttractionController {
 
     // Optimization
     @PostMapping("/optimize/{routeId}")
-    public ResponseEntity<?> optimizeRoute(@PathVariable Integer routeId) {
+    public ResponseEntity<List<RouteAttraction>> optimizeRoute(@PathVariable Integer routeId) {
         routeOptimizationService.optimizeRoute(routeId);
-        return ResponseEntity.ok(
-                java.util.Map.of("message", "Route optimization started")
-        );
+        List<RouteAttraction> optimized = routeAttractionRepository.findByRouteIdOrderByPosition(routeId);
+        return ResponseEntity.ok(optimized);
     }
 }
