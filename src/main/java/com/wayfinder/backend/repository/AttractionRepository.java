@@ -15,4 +15,6 @@ public interface AttractionRepository extends JpaRepository<Attraction, Long> {
     List<Attraction> findTop100ByCity(City city);
 
     boolean existsByOsmId(Long osmId);
+
+    List<Attraction> findByCity(City city);
 }

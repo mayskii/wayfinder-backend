@@ -26,11 +26,11 @@ public class AttractionService {
     public List<Map<String, Object>> getAttractions(String bbox) {
         String query = String.format("""
             [out:json][timeout:25];
-            (
-              node["tourism"]( %s );
-              way["tourism"]( %s );
-              relation["tourism"]( %s );
-            );
+                (
+                node["tourism"~"museum|artwork|gallery"]( %s );
+                way["tourism"~"museum|artwork|gallery"]( %s );
+                relation["tourism"~"museum|artwork|gallery"]( %s );
+                );
             out center 50;
             """, bbox, bbox, bbox);
 

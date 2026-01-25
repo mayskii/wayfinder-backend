@@ -35,12 +35,18 @@ public class RouteAttractionController {
         return routeAttractionRepository.findAll();
     }
 
+    // READ BY ROUTE
+    @GetMapping("/by-route/{routeId}")
+    public List<RouteAttraction> getByRoute(@PathVariable Integer routeId) {
+        return routeAttractionRepository.findByRouteIdOrderByPosition(routeId);
+    }
+
     // CREATE
     @PostMapping
     public ResponseEntity<Object> create(@RequestBody RouteAttraction ra) {
         try {
             ra.setCreatedAt(LocalDateTime.now());
-            return ResponseEntity.ok(saveRouteAttractionWithRelations(ra, ra));
+            return ResponseEntity.ok(saveRouteAttractionWithRelations(ra, ra, true));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -50,9 +56,34 @@ public class RouteAttractionController {
     @PutMapping("/{id}")
     public ResponseEntity<Object> update(@PathVariable Integer id, @RequestBody RouteAttraction updatedRA) {
         return routeAttractionRepository.findById(id)
-                .<ResponseEntity<Object>>map(ra -> ResponseEntity.ok(saveRouteAttractionWithRelations(ra, updatedRA)))
+                .<ResponseEntity<Object>>map(ra -> ResponseEntity.ok(saveRouteAttractionWithRelations(ra, updatedRA, false)))
                 .orElseGet(() -> ResponseEntity.status(404)
                         .body(Map.of("status", 404, "message", "RouteAttraction not found with id " + id)));
+    }
+
+    // --- UPDATE POSITION ---
+    @PatchMapping("/{id}/position")
+    public ResponseEntity<Object> updatePosition(@PathVariable Integer id, @RequestParam Integer newPosition) {
+        RouteAttraction ra = routeAttractionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("RouteAttraction not found with id " + id));
+
+        List<RouteAttraction> routeAttractions = routeAttractionRepository.findByRouteIdOrderByPosition(ra.getRoute().getId());
+
+        int minPos = 1;
+        int maxPos = routeAttractions.size();
+
+        if (newPosition < minPos || newPosition > maxPos)
+            return ResponseEntity.badRequest().body(Map.of("error", "Position must be between 1 and " + maxPos));
+
+        routeAttractions.remove(ra);
+        routeAttractions.add(newPosition - 1, ra);
+
+        for (int i = 0; i < routeAttractions.size(); i++) {
+            routeAttractions.get(i).setPosition(i + 1);
+        }
+
+        routeAttractionRepository.saveAll(routeAttractions);
+        return ResponseEntity.ok(Map.of("message", "Position updated"));
     }
 
     // DELETE
@@ -62,7 +93,7 @@ public class RouteAttractionController {
     }
 
     // Общий метод для POST и PUT
-    private RouteAttraction saveRouteAttractionWithRelations(RouteAttraction ra, RouteAttraction updated) {
+    private RouteAttraction saveRouteAttractionWithRelations(RouteAttraction ra, RouteAttraction updated, boolean autoPosition) {
 
         if (updated.getRoute() == null || updated.getRoute().getId() == null)
             throw new RuntimeException("route.id is required");
@@ -79,7 +110,10 @@ public class RouteAttractionController {
         ra.setRoute(route);
         ra.setAttraction(attraction);
 
-        if (updated.getPosition() != null) {
+        if (autoPosition) {
+            Integer maxPosition = routeAttractionRepository.findMaxPositionByRouteId(route.getId());
+            ra.setPosition(maxPosition != null ? maxPosition + 1 : 1);
+        } else if (updated.getPosition() != null) {
             ra.setPosition(updated.getPosition());
         }
 

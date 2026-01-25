@@ -54,54 +54,6 @@ public class AttractionController {
                         )));
     }
 
-    // CREATE
-    @PostMapping
-    public Attraction createAttraction(@RequestBody Attraction attraction) {
-        attraction.setCreatedAt(LocalDateTime.now());
-
-        return saveAttractionWithCity(attraction, attraction);
-    }
-
-    // UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<Object> updateAttraction(@PathVariable Long id, @RequestBody Attraction updatedAttraction) {
-
-        var optionalAttraction = attractionRepository.findById(id);
-
-        return optionalAttraction
-                .map(attraction -> {
-                    Attraction saved = updateAttractionFields(attraction, updatedAttraction);
-                    return ResponseEntity.ok((Object) saved);
-                })
-                .orElseGet(() -> ResponseEntity.status(404)
-                        .body(Map.of(
-                                "status", 404,
-                                "message", "Attraction not found with id " + id
-                        )));
-    }
-
-    private Attraction updateAttractionFields(Attraction attraction, Attraction updated) {
-        attraction.setName(updated.getName());
-        attraction.setCategory(updated.getCategory());
-        attraction.setLat(updated.getLat());
-        attraction.setLng(updated.getLng());
-        attraction.setWebsite(updated.getWebsite());
-        attraction.setWheelchair(updated.getWheelchair());
-        attraction.setFee(updated.getFee());
-
-        return saveAttractionWithCity(attraction, updated);
-    }
-
-    private Attraction saveAttractionWithCity(Attraction attraction, Attraction updated) {
-        if (updated.getCity() != null && updated.getCity().getId() != null) {
-            City city = cityRepository.findById(updated.getCity().getId())
-                    .orElseThrow(() -> new RuntimeException("City not found with id " + updated.getCity().getId()));
-            attraction.setCity(city);
-        }
-
-        return attractionRepository.save(attraction);
-    }
-
     // GET attractions from OSM for a given city
     @GetMapping("/from-osm")
     public List<Attraction> getAttractionsFromOsm(@RequestParam String cityName) {
@@ -109,16 +61,12 @@ public class AttractionController {
         final City city = cityRepository.findByName(cityName)
                 .orElseGet(() -> cityService.getCityCoordinates(cityName));
 
-        List<Attraction> existingAttractions = attractionRepository.findTop100ByCity(city);
-
-        if (existingAttractions.size() >= 100) {
-            return existingAttractions.subList(0, 100);
-        }
+        List<Attraction> existingAttractions = attractionRepository.findByCity(city);
+        int needed = 100 - existingAttractions.size();
+        if (needed <= 0) return existingAttractions;
 
         String bbox = getString(cityName, city);
         List<Map<String, Object>> osmAttractions = attractionService.getAttractions(bbox);
-
-        int needed = 100 - existingAttractions.size();
 
         List<Attraction> newAttractions = osmAttractions.stream()
                 .map(data -> {
@@ -156,7 +104,6 @@ public class AttractionController {
                     }
 
                     attraction.setCreatedAt(LocalDateTime.now());
-
                     return attraction;
                 })
                 .filter(Objects::nonNull)
@@ -194,9 +141,15 @@ public class AttractionController {
         return bbox;
     }
 
-    // DELETE
-    @DeleteMapping("/{id}")
-    public void deleteAttraction(@PathVariable Long id) {
-        attractionRepository.deleteById(id);
+    // DELETE all attractions
+    @DeleteMapping("/all")
+    public ResponseEntity<Map<String, Object>> deleteAllAttractions() {
+        long count = attractionRepository.count();
+        attractionRepository.deleteAll();
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "deletedCount", count,
+                "message", "All attractions have been deleted"
+        ));
     }
 }
