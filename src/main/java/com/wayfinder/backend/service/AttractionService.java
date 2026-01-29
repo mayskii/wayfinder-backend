@@ -30,9 +30,15 @@ public class AttractionService {
                 node["tourism"~"museum|artwork|gallery"]( %s );
                 way["tourism"~"museum|artwork|gallery"]( %s );
                 relation["tourism"~"museum|artwork|gallery"]( %s );
+                node["leisure"="park"](%s);
+                way["leisure"="park"](%s);
+                relation["leisure"="park"](%s);
+                node["amenity"~"restaurant|cafe|fast_food"](%s);
+                way["amenity"~"restaurant|cafe|fast_food"](%s);
+                relation["amenity"~"restaurant|cafe|fast_food"](%s);
                 );
             out center 50;
-            """, bbox, bbox, bbox);
+            """, bbox, bbox, bbox, bbox, bbox, bbox, bbox, bbox, bbox);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
