@@ -85,16 +85,14 @@ public class AttractionController {
                     if (data.get("tags") != null) {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> tags = (Map<String, Object>) data.get("tags");
-                        String category = tags.getOrDefault("tourism", "").toString();
-                        if (category.isEmpty()) return null; // <-- тут отбрасываем Unknown
-
                         attraction.setName(tags.getOrDefault("name", "Unknown").toString());
-                        attraction.setCategory(category);  // сохраняем только заполненную категорию
+                        attraction.setCategory(tags.getOrDefault("tourism", "Unknown").toString());
                         attraction.setWebsite(tags.getOrDefault("website", "").toString());
                         attraction.setWheelchair(tags.getOrDefault("wheelchair", "").toString());
                         attraction.setFee(tags.getOrDefault("fee", "").toString());
                     } else {
-                        return null;
+                        attraction.setName("Unknown");
+                        attraction.setCategory("Unknown");
                     }
 
                     if (data.get("lat") != null) {
