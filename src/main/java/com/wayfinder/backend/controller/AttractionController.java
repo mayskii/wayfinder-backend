@@ -67,13 +67,14 @@ public class AttractionController {
                 .orElseGet(() -> cityService.getCityCoordinates(cityName));
 
         List<Attraction> existingAttractions = attractionRepository.findByCity(city);
-        int needed = 100 - existingAttractions.size();
-        if (needed <= 0) return existingAttractions;
+        if (!existingAttractions.isEmpty()) {
+            return existingAttractions;
+        }
 
         String bbox = getString(cityName, city);
         List<Map<String, Object>> osmAttractions = attractionService.getAttractions(bbox);
 
-        List<Attraction> newAttractions = osmAttractions.stream()
+        return osmAttractions.stream()
                 .map(data -> {
                     Long osmId = data.get("id") != null ? Long.parseLong(data.get("id").toString()) : null;
                     if (osmId == null || attractionRepository.existsByOsmId(osmId)) return null;
@@ -109,16 +110,69 @@ public class AttractionController {
                     }
 
                     attraction.setCreatedAt(LocalDateTime.now());
-                    return attraction;
+                    return attractionRepository.save(attraction);
                 })
                 .filter(Objects::nonNull)
-                .limit(needed)
-                .map(attractionRepository::save)
                 .toList();
-
-        existingAttractions.addAll(newAttractions);
-        return existingAttractions;
     }
+//    public List<Attraction> getAttractionsFromOsm(@RequestParam String cityName) {
+//
+//        final City city = cityRepository.findByName(cityName)
+//                .orElseGet(() -> cityService.getCityCoordinates(cityName));
+//
+//        List<Attraction> existingAttractions = attractionRepository.findByCity(city);
+//        int needed = 100 - existingAttractions.size();
+//        if (needed <= 0) return existingAttractions;
+//
+//        String bbox = getString(cityName, city);
+//        List<Map<String, Object>> osmAttractions = attractionService.getAttractions(bbox);
+//
+//        List<Attraction> newAttractions = osmAttractions.stream()
+//                .map(data -> {
+//                    Long osmId = data.get("id") != null ? Long.parseLong(data.get("id").toString()) : null;
+//                    if (osmId == null || attractionRepository.existsByOsmId(osmId)) return null;
+//
+//                    Attraction attraction = new Attraction();
+//                    attraction.setOsmId(osmId);
+//                    attraction.setCity(city);
+//
+//                    if (data.get("tags") != null) {
+//                        @SuppressWarnings("unchecked")
+//                        Map<String, Object> tags = (Map<String, Object>) data.get("tags");
+//                        attraction.setName(tags.getOrDefault("name", "Unknown").toString());
+//                        attraction.setCategory(tags.getOrDefault("tourism", "Unknown").toString());
+//                        attraction.setWebsite(tags.getOrDefault("website", "").toString());
+//                        attraction.setWheelchair(tags.getOrDefault("wheelchair", "").toString());
+//                        attraction.setFee(tags.getOrDefault("fee", "").toString());
+//                    } else {
+//                        attraction.setName("Unknown");
+//                        attraction.setCategory("Unknown");
+//                    }
+//
+//                    if (data.get("lat") != null) {
+//                        attraction.setLat(Double.parseDouble(data.get("lat").toString()));
+//                    } else if (data.get("center") != null) {
+//                        @SuppressWarnings("unchecked")
+//                        Map<String, Object> center = (Map<String, Object>) data.get("center");
+//                        attraction.setLat(Double.parseDouble(center.get("lat").toString()));
+//                        attraction.setLng(Double.parseDouble(center.get("lon").toString()));
+//                    }
+//
+//                    if (data.get("lon") != null) {
+//                        attraction.setLng(Double.parseDouble(data.get("lon").toString()));
+//                    }
+//
+//                    attraction.setCreatedAt(LocalDateTime.now());
+//                    return attraction;
+//                })
+//                .filter(Objects::nonNull)
+//                .limit(needed)
+//                .map(attractionRepository::save)
+//                .toList();
+//
+//        existingAttractions.addAll(newAttractions);
+//        return existingAttractions;
+//    }
 
     private static @NonNull String getString(String cityName, City city) {
         String rawBbox = city.getBbox();
