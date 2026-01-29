@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.wayfinder.backend.model.Attraction;
 import com.wayfinder.backend.repository.AttractionRepository;
+import com.wayfinder.backend.repository.RouteAttractionRepository;
 import com.wayfinder.backend.repository.CityRepository;
 import com.wayfinder.backend.model.City;
 import com.wayfinder.backend.service.CityService;
@@ -23,17 +24,21 @@ public class AttractionController {
     private final CityRepository cityRepository;
     private final AttractionService attractionService;
     private final CityService cityService;
+    private final RouteAttractionRepository routeAttractionRepository;
+
 
     public AttractionController(
             AttractionRepository attractionRepository,
             CityRepository cityRepository,
             AttractionService attractionService,
-            CityService cityService
+            CityService cityService,
+            RouteAttractionRepository routeAttractionRepository
     ) {
         this.attractionRepository = attractionRepository;
         this.cityRepository = cityRepository;
         this.attractionService = attractionService;
         this.cityService = cityService;
+        this.routeAttractionRepository = routeAttractionRepository;
     }
 
     // READ ALL
@@ -80,14 +85,16 @@ public class AttractionController {
                     if (data.get("tags") != null) {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> tags = (Map<String, Object>) data.get("tags");
+                        String category = tags.getOrDefault("tourism", "").toString();
+                        if (category.isEmpty()) return null; // <-- тут отбрасываем Unknown
+
                         attraction.setName(tags.getOrDefault("name", "Unknown").toString());
-                        attraction.setCategory(tags.getOrDefault("tourism", "Unknown").toString());
+                        attraction.setCategory(category);  // сохраняем только заполненную категорию
                         attraction.setWebsite(tags.getOrDefault("website", "").toString());
                         attraction.setWheelchair(tags.getOrDefault("wheelchair", "").toString());
                         attraction.setFee(tags.getOrDefault("fee", "").toString());
                     } else {
-                        attraction.setName("Unknown");
-                        attraction.setCategory("Unknown");
+                        return null;
                     }
 
                     if (data.get("lat") != null) {
@@ -144,6 +151,9 @@ public class AttractionController {
     // DELETE all attractions
     @DeleteMapping("/all")
     public ResponseEntity<Map<String, Object>> deleteAllAttractions() {
+
+        routeAttractionRepository.deleteAll();
+
         long count = attractionRepository.count();
         attractionRepository.deleteAll();
         return ResponseEntity.ok(Map.of(
