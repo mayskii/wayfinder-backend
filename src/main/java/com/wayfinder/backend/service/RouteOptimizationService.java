@@ -27,7 +27,7 @@ public class RouteOptimizationService {
         List<RouteAttraction> unvisited = new ArrayList<>(routeAttractions);
         List<RouteAttraction> optimized = new ArrayList<>();
 
-        // стартовая точка
+        // start point
         RouteAttraction current = unvisited.remove(0);
         optimized.add(current);
 

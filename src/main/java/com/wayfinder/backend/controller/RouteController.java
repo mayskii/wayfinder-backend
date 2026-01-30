@@ -6,6 +6,8 @@ import com.wayfinder.backend.repository.RouteRepository;
 import com.wayfinder.backend.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+import com.wayfinder.backend.repository.RouteAttractionRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,10 +19,12 @@ public class RouteController {
 
     private final RouteRepository routeRepository;
     private final UserRepository userRepository;
+    private final RouteAttractionRepository routeAttractionRepository;
 
-    public RouteController(RouteRepository routeRepository, UserRepository userRepository) {
+    public RouteController(RouteRepository routeRepository, UserRepository userRepository, RouteAttractionRepository routeAttractionRepository) {
         this.routeRepository = routeRepository;
         this.userRepository = userRepository;
+        this.routeAttractionRepository = routeAttractionRepository;
     }
 
     // READ ALL
@@ -84,9 +88,18 @@ public class RouteController {
     }
 
     // DELETE
+    @Transactional
     @DeleteMapping("/{id}")
-    public void deleteRoute(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteRoute(@PathVariable Integer id) {
+        if (!routeRepository.existsById(id)) {
+            return ResponseEntity.status(404)
+                    .body(Map.of("status", 404, "message", "Route not found"));
+        }
+
+        routeAttractionRepository.deleteByRouteId(id);
         routeRepository.deleteById(id);
+
+        return ResponseEntity.ok(Map.of("message", "Route deleted"));
     }
 
 }

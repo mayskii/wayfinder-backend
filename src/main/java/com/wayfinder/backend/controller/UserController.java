@@ -36,11 +36,29 @@ public class UserController {
                         )));
     }
 
-    // CREATE USER
-    @PostMapping
-    public User createUser(@RequestBody User user) {
-        user.setCreatedAt(java.time.LocalDateTime.now());
-        return userRepository.save(user);
+    // CREATE USER OR GET EXISTING USER (from Firebase)
+    @PostMapping("/create-or-get")
+    public ResponseEntity<User> registerOrGetUser(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String name = body.get("name");
+
+        if (email == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        }
+
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setName(name != null ? name : "Unknown");
+        newUser.setCreatedAt(java.time.LocalDateTime.now());
+        User savedUser = userRepository.save(newUser);
+
+        return ResponseEntity.ok(savedUser);
     }
 
     // UPDATE
