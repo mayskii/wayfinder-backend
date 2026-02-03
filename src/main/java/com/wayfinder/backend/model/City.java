@@ -24,7 +24,7 @@ public class City {
     private Double lat;
     private Double lng;
 
-    private String bbox;  //TODO надо поманять на правильный тип
+    private String bbox;
 
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
