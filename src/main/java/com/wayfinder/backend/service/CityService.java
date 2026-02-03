@@ -2,6 +2,7 @@ package com.wayfinder.backend.service;
 
 import com.wayfinder.backend.model.City;
 import com.wayfinder.backend.repository.CityRepository;
+import com.wayfinder.backend.exception.CityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -37,19 +38,43 @@ public class CityService {
         }
 
         String url = apiUrl + "?key=" + apiKey + "&q=" + cityName + "&format=json";
-        Object[] responseArray = restTemplate.getForObject(url, Object[].class);
+        Object[] responseArray;
+
+        try {
+            responseArray = restTemplate.getForObject(url, Object[].class);
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+
+            throw new CityNotFoundException("City not found via API: " + cityName);
+        } catch (Exception e) {
+
+            throw new RuntimeException("API error while searching city: " + cityName, e);
+        }
 
         if (responseArray == null || responseArray.length == 0) {
-            throw new RuntimeException("City not found via API: " + cityName);
+            throw new CityNotFoundException("City not found: " + cityName);
         }
 
         @SuppressWarnings("unchecked")
         Map<String, Object> data = (Map<String, Object>) responseArray[0];
 
+        if (data.get("lat") == null || data.get("lon") == null) {
+            throw new CityNotFoundException("Coordinates not found for city: " + cityName);
+        }
+
         City city = new City();
         city.setName(cityName);
         city.setLat(Double.parseDouble(data.get("lat").toString()));
         city.setLng(Double.parseDouble(data.get("lon").toString()));
+
+        String country = "Unknown";
+        if (data.get("display_name") != null) {
+            String displayName = data.get("display_name").toString();
+            String[] parts = displayName.split(",");
+            if (parts.length > 0 && parts[parts.length - 1] != null && !parts[parts.length - 1].isBlank()) {
+                country = parts[parts.length - 1].trim();
+            }
+        }
+        city.setCountry(country);
 
         if (data.get("osm_id") != null) {
             city.setOsmId(Long.parseLong(data.get("osm_id").toString()));
@@ -62,16 +87,7 @@ public class CityService {
             city.setBbox(String.join(",", bboxList));
         }
 
-        if (data.get("display_name") != null) {
-            String displayName = data.get("display_name").toString();
-            String[] parts = displayName.split(",");
-            city.setCountry(parts[parts.length - 1].trim());
-        } else {
-            city.setCountry("Unknown");
-        }
-
         city.setLastUpdated(LocalDateTime.now());
-
         return cityRepository.save(city);
     }
 
