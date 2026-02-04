@@ -80,35 +80,6 @@ class CityControllerTest {
     }
 
     @Test
-    void testUpdateCityFound() {
-        City updatedCity = new City();
-        updatedCity.setName("New York");
-        updatedCity.setCountry("USA");
-
-        when(cityService.updateCity(1L, updatedCity)).thenReturn(Optional.of(updatedCity));
-
-        ResponseEntity<?> response = cityController.updateCity(1L, updatedCity);
-
-        assertEquals(200, response.getStatusCode().value());
-        assertInstanceOf(City.class, response.getBody(), "Response body should be a City");
-        City responseCity = (City) response.getBody();
-        assertEquals("New York", responseCity.getName());
-    }
-
-    @Test
-    void testUpdateCityNotFound() {
-        City updatedCity = new City();
-        updatedCity.setName("Unknown");
-        updatedCity.setCountry("Nowhere");
-
-        when(cityService.updateCity(999L, updatedCity)).thenReturn(Optional.empty());
-
-        ResponseEntity<?> response = cityController.updateCity(999L, updatedCity);
-
-        assertEquals(404, response.getStatusCode().value());
-    }
-
-    @Test
     void testDeleteCity() {
         doNothing().when(cityService).deleteCity(1L);
 

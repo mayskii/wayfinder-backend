@@ -49,20 +49,6 @@ public class CityController {
         return cityService.save(city);
     }
 
-    // UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateCity(
-            @PathVariable Long id,
-            @RequestBody City updatedCity
-    ) {
-        return cityService.updateCity(id, updatedCity)
-                .<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(404)
-                        .body(Map.of(
-                                "status", 404,
-                                "message", "City not found with id " + id
-                        )));
-    }
 
     // DELETE
     @DeleteMapping("/{id}")

@@ -116,10 +116,8 @@ public class CityService {
             city.setLng(updatedCity.getLng());
             city.setBbox(updatedCity.getBbox());
 
-            // Добавляем: обновляем OSM ID
             city.setOsmId(updatedCity.getOsmId());
 
-            // Добавляем: ставим текущее время для lastUpdated
             city.setLastUpdated(java.time.LocalDateTime.now());
 
             return cityRepository.save(city);
