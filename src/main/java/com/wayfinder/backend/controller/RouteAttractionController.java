@@ -98,6 +98,16 @@ public class RouteAttractionController {
         routeAttractionRepository.deleteById(id);
     }
 
+    // DELETE attractions for optimization
+    @DeleteMapping("/by-route/{routeId}")
+    public ResponseEntity<Void> deleteByRoute(@PathVariable Integer routeId) {
+        List<RouteAttraction> list =
+                routeAttractionRepository.findByRouteIdOrderByPosition(routeId);
+
+        routeAttractionRepository.deleteAll(list);
+        return ResponseEntity.ok().build();
+    }
+
     // Общий метод для POST и PUT
     private RouteAttraction saveRouteAttractionWithRelations(RouteAttraction ra, RouteAttraction updated, boolean autoPosition) {
 
