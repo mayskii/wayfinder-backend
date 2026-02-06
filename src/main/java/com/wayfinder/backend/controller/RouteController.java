@@ -78,7 +78,14 @@ public class RouteController {
     }
 
     private Route updateRouteFields(Route route, Route updated) {
-        route.setName(updated.getName());
+        if (updated.getName() != null) {
+            route.setName(updated.getName());
+        }
+
+        if (updated.getNotes() != null) {
+            route.setNotes(updated.getNotes());
+        }
+
         if (updated.getUser() != null) {
             User user = userRepository.findById(updated.getUser().getId())
                     .orElseThrow(() -> new RuntimeException("User not found with id " + updated.getUser().getId()));

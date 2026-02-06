@@ -23,5 +23,8 @@ public class Route {
     private String name;
     private LocalDateTime createdAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     public Route() {}
 }
