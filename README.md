@@ -54,7 +54,7 @@ docker run -p 8080:8080 -e DATABASE_URL=... -e DATABASE_USERNAME=... -e DATABASE
 
 ## Deployment
 
-Deployed as a Docker web service on Render, with the database on Neon (PostgreSQL). On the free plan the server sleeps when idle, so the first request can take about a minute.
+Deployed as a Docker web service on Render, with the database on Neon (PostgreSQL). On the free plan the server may sleep when idle, so the first request can take up to two minutes.
 
 ---
 
