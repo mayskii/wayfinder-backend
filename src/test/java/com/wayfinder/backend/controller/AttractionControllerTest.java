@@ -3,7 +3,6 @@ package com.wayfinder.backend.controller;
 import com.wayfinder.backend.model.Attraction;
 import com.wayfinder.backend.repository.AttractionRepository;
 import com.wayfinder.backend.repository.CityRepository;
-import com.wayfinder.backend.repository.RouteAttractionRepository;
 import com.wayfinder.backend.service.AttractionService;
 import com.wayfinder.backend.service.CityService;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,14 +20,12 @@ import static org.mockito.Mockito.*;
 class AttractionControllerTest {
 
     private AttractionRepository attractionRepository;
-    private RouteAttractionRepository routeAttractionRepository;
 
     private AttractionController attractionController;
 
     @BeforeEach
     void setup() {
         attractionRepository = mock(AttractionRepository.class);
-        routeAttractionRepository = mock(RouteAttractionRepository.class);
 
         CityRepository cityRepository = mock(CityRepository.class);
         AttractionService attractionService = mock(AttractionService.class);
@@ -38,8 +35,7 @@ class AttractionControllerTest {
                 attractionRepository,
                 cityRepository,
                 attractionService,
-                cityService,
-                routeAttractionRepository
+                cityService
         );
     }
 
@@ -87,22 +83,4 @@ class AttractionControllerTest {
         assertInstanceOf(Map.class, response.getBody());
     }
 
-    @Test
-    void testDeleteAllAttractions() {
-        when(attractionRepository.count()).thenReturn(5L);
-
-        ResponseEntity<Map<String, Object>> response =
-                attractionController.deleteAllAttractions();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-
-        Map<String, Object> body = response.getBody();
-        assertNotNull(body);
-
-        assertEquals("success", body.get("status"));
-        assertEquals(5L, body.get("deletedCount"));
-
-        verify(routeAttractionRepository).deleteAll();
-        verify(attractionRepository).deleteAll();
-    }
 }
