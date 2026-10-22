@@ -87,7 +87,9 @@ public class AttractionController {
                     if (data.get("tags") != null) {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> tags = (Map<String, Object>) data.get("tags");
-                        attraction.setName(tags.getOrDefault("name", "Unknown").toString());
+                        // prefer the English name, so places in Tokyo or Seoul are readable
+                        Object name = tags.get("name:en") != null ? tags.get("name:en") : tags.getOrDefault("name", "Unknown");
+                        attraction.setName(name.toString());
                         attraction.setCategory(tags.getOrDefault("tourism", "uncategorized").toString());
                         attraction.setWebsite(tags.getOrDefault("website", "").toString());
                         attraction.setWheelchair(tags.getOrDefault("wheelchair", "").toString());
