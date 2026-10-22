@@ -23,6 +23,7 @@ class AttractionServiceTest {
     void setup() throws Exception {
         restTemplate = mock(RestTemplate.class);
         attractionService = new AttractionService(restTemplate);
+        attractionService.retryPauseMillis = 0;
 
         Field urlField = AttractionService.class.getDeclaredField("overpassUrl");
         urlField.setAccessible(true);

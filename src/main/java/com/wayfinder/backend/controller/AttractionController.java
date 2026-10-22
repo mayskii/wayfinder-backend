@@ -13,6 +13,7 @@ import com.wayfinder.backend.service.CityService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -138,7 +139,18 @@ public class AttractionController {
         double west  = Math.min(lon1, lon2);
         double east  = Math.max(lon1, lon2);
 
-        String bbox = String.format("%f,%f,%f,%f", south, west, north, east);
+        // Big cities (Moscow, Paris…) come with a bbox of the whole metro area, and Overpass
+        // often times out on it. Search the center instead: about 10 x 10 km around the city point.
+        if (city.getLat() != null && city.getLng() != null) {
+            double halfLat = 0.045;
+            double halfLon = halfLat / Math.cos(Math.toRadians(city.getLat()));
+            south = Math.max(south, city.getLat() - halfLat);
+            north = Math.min(north, city.getLat() + halfLat);
+            west  = Math.max(west,  city.getLng() - halfLon);
+            east  = Math.min(east,  city.getLng() + halfLon);
+        }
+
+        String bbox = String.format(Locale.ROOT, "%f,%f,%f,%f", south, west, north, east);
         return bbox;
     }
 

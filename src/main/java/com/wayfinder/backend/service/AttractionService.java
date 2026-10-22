@@ -26,13 +26,16 @@ public class AttractionService {
     @Value("${overpass.api.url}")
     private String overpassUrl;
 
+    // pause before the second round of attempts; a field so tests can set it to 0
+    long retryPauseMillis = 3000;
+
     public AttractionService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
     public List<Map<String, Object>> getAttractions(String bbox) {
         String query = String.format("""
-            [out:json][timeout:25];
+            [out:json][timeout:60];
                 (
                 node["tourism"~"museum|artwork|gallery"]( %s );
                 way["tourism"~"museum|artwork|gallery"]( %s );
@@ -54,27 +57,39 @@ public class AttractionService {
 
         HttpEntity<String> entity = new HttpEntity<>("data=" + query, headers);
 
-        // The public Overpass servers are often busy, so try each configured mirror in turn
+        // The public Overpass servers are often busy, so try each configured mirror in turn,
+        // and go around the list once more after a short pause
         RestClientException lastError = null;
-        for (String url : overpassUrl.split(",")) {
-            try {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> response = restTemplate.postForObject(url.trim(), entity, Map.class);
+        for (int round = 0; round < 2; round++) {
+            if (round > 0) pause(retryPauseMillis);
+            for (String url : overpassUrl.split(",")) {
+                try {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> response = restTemplate.postForObject(url.trim(), entity, Map.class);
 
-                if (response == null || !response.containsKey("elements")) {
-                    return Collections.emptyList();
+                    if (response == null || !response.containsKey("elements")) {
+                        return Collections.emptyList();
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> elements = (List<Map<String, Object>>) response.get("elements");
+
+                    return elements;
+                } catch (RestClientException e) {
+                    log.warn("Overpass request to {} failed: {}", url.trim(), e.getMessage());
+                    lastError = e;
                 }
-
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> elements = (List<Map<String, Object>>) response.get("elements");
-
-                return elements;
-            } catch (RestClientException e) {
-                log.warn("Overpass request to {} failed: {}", url.trim(), e.getMessage());
-                lastError = e;
             }
         }
         throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
                 "The map data service is busy. Please try again in a minute.", lastError);
+    }
+
+    private static void pause(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
