@@ -74,4 +74,20 @@ class AttractionServiceTest {
         var e = assertThrows(ResponseStatusException.class, () -> attractionService.getAttractions("1,2,3,4"));
         assertEquals(HttpStatus.SERVICE_UNAVAILABLE, e.getStatusCode());
     }
+
+    @Test
+    void testGetAttractions_timedOutAnswerTriesNextMirror() throws Exception {
+        Field urlField = AttractionService.class.getDeclaredField("overpassUrl");
+        urlField.setAccessible(true);
+        urlField.set(attractionService, "http://slow.test,http://mirror.test");
+
+        when(restTemplate.postForObject(eq("http://slow.test"), any(), eq(Map.class)))
+                .thenReturn(Map.of("elements", List.of(), "remark", "runtime error: Query timed out"));
+        when(restTemplate.postForObject(eq("http://mirror.test"), any(), eq(Map.class)))
+                .thenReturn(Map.of("elements", List.of(Map.of("id", 9))));
+
+        var result = attractionService.getAttractions("1,2,3,4");
+
+        assertEquals(1, result.size());
+    }
 }

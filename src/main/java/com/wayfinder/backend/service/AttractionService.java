@@ -74,6 +74,14 @@ public class AttractionService {
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> elements = (List<Map<String, Object>>) response.get("elements");
 
+                    // A busy server can answer 200 with no elements and a "remark" like
+                    // "runtime error: Query timed out" — treat that as a failure and try the next one
+                    if (elements.isEmpty() && response.get("remark") != null) {
+                        log.warn("Overpass at {} returned no data: {}", url.trim(), response.get("remark"));
+                        lastError = new RestClientException("Overpass remark: " + response.get("remark"));
+                        continue;
+                    }
+
                     return elements;
                 } catch (RestClientException e) {
                     log.warn("Overpass request to {} failed: {}", url.trim(), e.getMessage());
